@@ -5,6 +5,7 @@ import Login from '../views/Login.vue'
 
 import Budget from '../views/Budget.vue'
 import Categories from '../views/Categories.vue'
+import Wallets from '../views/Wallets.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -25,6 +26,12 @@ const router = createRouter({
       path: '/categories',
       name: 'categories',
       component: Categories,
+      meta: { requiresAuth: true }
+    },
+    {
+      path: '/wallets',
+      name: 'wallets',
+      component: Wallets,
       meta: { requiresAuth: true }
     },
     {

@@ -9,9 +9,23 @@
         <router-link to="/" class="nav-link">Dashboard</router-link>
         <router-link to="/budget" class="nav-link">Budget (YNAB)</router-link>
         <router-link to="/categories" class="nav-link">Kategori</router-link>
+        <router-link to="/wallets" class="nav-link">Buku Kas</router-link>
       </div>
       <div class="user-actions flex items-center gap-4">
-        <span class="user-email">{{ user?.email }}</span>
+        <!-- Wallet Switcher -->
+        <div class="wallet-switcher" v-if="wallets && wallets.length > 0">
+          <select 
+            class="form-control wallet-select" 
+            :value="activeWallet?.id" 
+            @change="$emit('change-wallet', $event.target.value)"
+          >
+            <option v-for="w in wallets" :key="w.id" :value="w.id">
+              {{ w.name }}
+            </option>
+          </select>
+        </div>
+        
+        <span class="user-email hidden-mobile">{{ user?.email }}</span>
         <button class="btn btn-secondary btn-sm" @click="$emit('logout')">Logout</button>
       </div>
     </div>
@@ -23,9 +37,17 @@ defineProps({
   user: {
     type: Object,
     default: null
+  },
+  wallets: {
+    type: Array,
+    default: () => []
+  },
+  activeWallet: {
+    type: Object,
+    default: null
   }
 })
-defineEmits(['logout'])
+defineEmits(['logout', 'change-wallet'])
 </script>
 
 <style scoped>
@@ -88,6 +110,19 @@ defineEmits(['logout'])
 .nav-link:hover, .nav-link.router-link-active {
   color: var(--primary);
   background-color: var(--primary-light);
+}
+
+.wallet-switcher {
+  display: flex;
+  align-items: center;
+}
+
+.wallet-select {
+  padding: 0.25rem 0.5rem;
+  font-size: 0.875rem;
+  min-width: 150px;
+  background-color: var(--bg-surface-hover);
+  border: 1px solid var(--border);
 }
 
 @media (max-width: 768px) {

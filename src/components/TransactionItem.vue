@@ -5,6 +5,9 @@
         <svg v-if="transaction.type === 'income'" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
         </svg>
+        <svg v-else-if="transaction.type === 'savings'" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline>
+        </svg>
         <svg v-else xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 17h8m0 0V9m0 8l-8-8-4 4-6-6" />
         </svg>
@@ -20,6 +23,11 @@
           <span>{{ formatDate(transaction.date) }}</span>
           <span class="meta-dot">•</span>
           <span class="tx-method">{{ transaction.payment_method || 'Cash' }}</span>
+          <span class="meta-dot">•</span>
+          <span class="tx-creator">
+            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="inline-icon"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+            {{ transaction.user_id === currentUser ? 'Anda' : (transaction.user_id === walletOwner ? 'Pemilik' : `Anggota (${transaction.user_id?.substring(0,4) || '?'})`) }}
+          </span>
         </div>
         <div v-if="transaction.tags && transaction.tags.length > 0" class="tx-tags mt-1">
           <span v-for="tag in transaction.tags" :key="tag" class="tag-badge">#{{ tag }}</span>
@@ -57,6 +65,14 @@ defineProps({
   index: {
     type: Number,
     default: 0
+  },
+  currentUser: {
+    type: String,
+    default: null
+  },
+  walletOwner: {
+    type: String,
+    default: null
   }
 })
 
@@ -135,6 +151,11 @@ const formatDate = (dateString) => {
   color: var(--expense);
 }
 
+.tx-icon.savings {
+  background-color: rgba(59, 130, 246, 0.15);
+  color: #3b82f6;
+}
+
 .tx-title {
   margin: 0 0 0.25rem 0;
   font-size: 1rem;
@@ -198,6 +219,7 @@ const formatDate = (dateString) => {
 
 .tx-amount.income { color: var(--income); }
 .tx-amount.expense { color: var(--text-main); }
+.tx-amount.savings { color: #3b82f6; }
 
 .tx-admin-fee {
   font-size: 0.75rem;
@@ -229,5 +251,21 @@ const formatDate = (dateString) => {
 .btn-delete svg {
   width: 20px;
   height: 20px;
+}
+
+.tx-creator {
+  display: flex;
+  align-items: center;
+  gap: 0.2rem;
+  font-weight: 500;
+  color: var(--primary);
+  background: var(--primary-light, rgba(170, 59, 255, 0.1));
+  padding: 0.1rem 0.4rem;
+  border-radius: var(--radius-sm);
+}
+
+.inline-icon {
+  display: inline-block;
+  vertical-align: middle;
 }
 </style>

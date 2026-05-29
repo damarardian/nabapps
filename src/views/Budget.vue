@@ -87,9 +87,9 @@
             <thead>
               <tr>
                 <th class="w-1/3">Kategori</th>
-                <th class="text-right">Dianggarkan <span class="block text-[10px] opacity-70 uppercase tracking-wider font-normal mt-1">Bulan Ini</span></th>
-                <th class="text-right">Terpakai <span class="block text-[10px] opacity-70 uppercase tracking-wider font-normal mt-1">Bulan Ini</span></th>
-                <th class="text-right">Tersedia <span class="block text-[10px] opacity-70 uppercase tracking-wider font-normal mt-1">Total Tersisa</span></th>
+                <th class="text-right">Dianggarkan <span class="block text-xxs opacity-70 uppercase tracking-wider font-normal mt-1">Bulan Ini</span></th>
+                <th class="text-right">Terpakai <span class="block text-xxs opacity-70 uppercase tracking-wider font-normal mt-1">Bulan Ini</span></th>
+                <th class="text-right">Tersedia <span class="block text-xxs opacity-70 uppercase tracking-wider font-normal mt-1">Total Tersisa</span></th>
               </tr>
             </thead>
             <tbody>
@@ -426,7 +426,7 @@ onMounted(() => {
 .text-sm { font-size: 0.875rem; }
 .text-5xl { font-size: 3rem; }
 .text-xl { font-size: 1.25rem; }
-.text-[10px] { font-size: 10px; }
+.text-xxs { font-size: 10px; }
 .opacity-80 { opacity: 0.8; }
 .opacity-70 { opacity: 0.7; }
 .opacity-50 { opacity: 0.5; }

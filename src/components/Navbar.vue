@@ -5,7 +5,7 @@
         <div class="logo"></div>
         <span class="brand-name">Nabung</span>
       </div>
-      <div class="nav-links flex gap-4 hidden-mobile">
+      <div class="nav-links flex gap-4">
         <router-link to="/" class="nav-link">Dashboard</router-link>
         <router-link to="/budget" class="nav-link">Budget (YNAB)</router-link>
         <router-link to="/categories" class="nav-link">Kategori</router-link>
@@ -123,9 +123,44 @@ defineEmits(['logout', 'change-wallet'])
   min-width: 150px;
   background-color: var(--bg-surface-hover);
   border: 1px solid var(--border);
+  background-image: none; /* Hilangkan ikon panah */
+  padding-right: 0.5rem; /* Kembalikan padding kanan menjadi normal */
+  text-align: center; /* Opsional: membuat teks di tengah agar lebih rapi */
 }
 
 @media (max-width: 768px) {
+  .navbar .container {
+    flex-wrap: wrap;
+    gap: 1rem;
+  }
+  
+  .brand {
+    order: 1;
+  }
+  
+  .user-actions {
+    order: 2;
+  }
+  
+  .nav-links {
+    order: 3;
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: 0.5rem;
+    gap: 0.5rem; /* slightly less gap on mobile */
+  }
+
+  .nav-link {
+    white-space: nowrap;
+    font-size: 0.8rem;
+    padding: 0.4rem 0.6rem;
+  }
+
+  .wallet-select {
+    min-width: 120px; /* smaller on mobile */
+  }
+
   .hidden-mobile {
     display: none;
   }

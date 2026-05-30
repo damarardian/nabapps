@@ -3,7 +3,7 @@
     <div class="modal-content glass-panel animate-slide-up">
       
       <div class="modal-header flex justify-between items-center mb-4">
-        <h3 class="m-0 text-lg font-bold">✨ Pemindai Struk AI</h3>
+        <h3 class="m-0 text-lg font-bold">Scanning Receipt</h3>
         <button v-if="!scanning" @click="$emit('close')" class="btn-close">×</button>
       </div>
 
@@ -32,7 +32,7 @@
           <p v-else-if="errorMsg" class="text-expense font-semibold">{{ errorMsg }}</p>
           <div v-else-if="scanning" class="scanning-text">
             <span class="pulsing-dot"></span>
-            Menganalisis gambar dengan Google Gemini...
+            Gambar sedang dianalisis, tunggu sebentar...
           </div>
           <p v-else class="text-muted">Menyiapkan gambar...</p>
         </div>

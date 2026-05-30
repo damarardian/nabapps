@@ -75,7 +75,7 @@
         <!-- Add Transaction Form -->
         <div class="form-section glass-panel">
           <div class="flex justify-between items-center mb-4">
-            <h2 class="m-0 text-xl font-bold">Catat Transaksi</h2>
+            <h2 class="m-0 text-xl font-bold">{{ editingId ? 'Edit Transaksi' : 'Catat Transaksi' }}</h2>
             <!-- AI Scanner Button -->
             <button type="button" @click="triggerFileInput" class="btn btn-secondary btn-sm flex items-center gap-2">
               <span>✨</span> Scan Struk
@@ -175,13 +175,16 @@
               <input type="text" v-model="form.tagsInput" class="form-control text-sm" placeholder="Pisahkan koma (Misal: Liburan, Dinas)">
             </div>
 
-            <button type="submit" class="btn btn-primary w-full submit-btn mt-2" :disabled="loading">
-              <span class="flex items-center justify-center gap-2">
-                <svg v-if="!loading" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>
-                <svg v-else class="animate-spin" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 1 1-6.219-8.56"></path></svg>
-                {{ loading ? 'Menyimpan...' : 'Simpan Transaksi' }}
-              </span>
-            </button>
+            <div class="flex gap-2 mt-2">
+              <button type="button" v-if="editingId" @click="cancelEdit" class="btn btn-secondary w-1/3">Batal</button>
+              <button type="submit" class="btn btn-primary submit-btn flex-1" :disabled="loading">
+                <span class="flex items-center justify-center gap-2">
+                  <svg v-if="!loading" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>
+                  <svg v-else class="animate-spin" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 1 1-6.219-8.56"></path></svg>
+                  {{ loading ? 'Menyimpan...' : (editingId ? 'Perbarui Transaksi' : 'Simpan Transaksi') }}
+                </span>
+              </button>
+            </div>
           </form>
         </div>
 
@@ -268,9 +271,9 @@
               :transaction="tx"
               :category="getCategoryPath(tx.category_id)"
               :index="index"
-              :current-user="user?.id"
               :wallet-owner="activeWallet?.owner_id"
               @delete="deleteTransaction"
+              @edit="startEdit"
             />
           </div>
         </div>
@@ -302,6 +305,7 @@ const fetching = ref(true)
 const hasAdminFee = ref(false)
 const fileInput = ref(null)
 const scanningFile = ref(null)
+const editingId = ref(null)
 
 const defaultForm = {
   type: 'expense',
@@ -523,32 +527,82 @@ const addTransaction = async () => {
     .split(',')
     .map(t => t.trim())
     .filter(t => t.length > 0)
+    
+  const txData = {
+    amount: Number(form.value.amount),
+    admin_fee: hasAdminFee.value && form.value.admin_fee ? Number(form.value.admin_fee) : 0,
+    type: form.value.type,
+    category_id: form.value.category_id,
+    description: form.value.description,
+    merchant: form.value.merchant || null,
+    payment_method: form.value.payment_method,
+    tags: tagsArray.length > 0 ? tagsArray : null,
+    date: form.value.date
+  }
   
-  const { data, error } = await supabase
-    .from('transactions')
-    .insert([{
-      user_id: props.user.id,
-      wallet_id: props.activeWallet.id,
-      amount: Number(form.value.amount),
-      admin_fee: hasAdminFee.value && form.value.admin_fee ? Number(form.value.admin_fee) : 0,
-      type: form.value.type,
-      category_id: form.value.category_id,
-      description: form.value.description,
-      merchant: form.value.merchant || null,
-      payment_method: form.value.payment_method,
-      tags: tagsArray.length > 0 ? tagsArray : null,
-      date: form.value.date
-    }])
-    .select()
-
-  if (error) {
-    alert('Gagal menyimpan transaksi: ' + error.message)
-  } else if (data) {
-    transactions.value.unshift(data[0])
-    hasAdminFee.value = false
-    form.value = { ...defaultForm, type: form.value.type }
+  if (editingId.value) {
+    // Update existing
+    const { data, error } = await supabase
+      .from('transactions')
+      .update(txData)
+      .eq('id', editingId.value)
+      .select()
+      
+    if (error) {
+      alert('Gagal memperbarui transaksi: ' + error.message)
+    } else if (data && data.length > 0) {
+      const index = transactions.value.findIndex(t => t.id === editingId.value)
+      if (index !== -1) {
+        transactions.value[index] = data[0]
+      }
+      cancelEdit()
+    }
+  } else {
+    // Insert new
+    txData.user_id = props.user.id
+    txData.wallet_id = props.activeWallet.id
+    
+    const { data, error } = await supabase
+      .from('transactions')
+      .insert([txData])
+      .select()
+      
+    if (error) {
+      alert('Gagal menyimpan transaksi: ' + error.message)
+    } else if (data && data.length > 0) {
+      transactions.value.unshift(data[0])
+      hasAdminFee.value = false
+      form.value = { ...defaultForm, type: form.value.type }
+    }
   }
   loading.value = false
+}
+
+const startEdit = (tx) => {
+  editingId.value = tx.id
+  
+  form.value = {
+    type: tx.type,
+    amount: tx.amount,
+    admin_fee: tx.admin_fee || '',
+    category_id: tx.category_id,
+    description: tx.description || '',
+    merchant: tx.merchant || '',
+    payment_method: tx.payment_method || 'Cash',
+    tagsInput: tx.tags ? tx.tags.join(', ') : '',
+    date: tx.date || new Date().toISOString().split('T')[0]
+  }
+  
+  hasAdminFee.value = !!tx.admin_fee && tx.admin_fee > 0
+  
+  // Scroll to form
+  window.scrollTo({ top: 0, behavior: 'smooth' })
+}
+
+const cancelEdit = () => {
+  editingId.value = null
+  hasAdminFee.value = false
+  form.value = { ...defaultForm, type: form.value.type }
 }
 
 const deleteTransaction = async (id) => {
@@ -959,6 +1013,9 @@ input:checked + .slider:before {
   font-size: 0.85rem;
   border-radius: 0.5rem;
   background-color: var(--bg-body);
+  padding-top: 0.4rem;
+  padding-bottom: 0.4rem;
+  padding-left: 0.75rem;
 }
 
 /* Animations & States */

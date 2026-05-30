@@ -10,61 +10,81 @@
     
     <div v-else>
       <!-- Header Summary -->
-      <div class="summary-grid mb-10">
-        <!-- Total Balance -->
-        <div class="summary-card glass-panel total-card">
-          <div class="card-icon-wrapper bg-blue">
+      <div class="dashboard-header mb-10">
+        <!-- Total Balance HERO -->
+        <div class="summary-card glass-panel hero-card mb-6">
+          <div class="card-icon-wrapper hero-icon bg-blue">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"></path></svg>
           </div>
           <div class="card-content">
             <h3>Saldo Utama</h3>
-            <p class="amount">Rp {{ formatCurrency(totalBalance) }}</p>
+            <p class="amount hero-amount">Rp {{ formatCurrency(totalBalance) }}</p>
           </div>
         </div>
-        <!-- Savings -->
-        <div class="summary-card glass-panel savings-card items-start">
-          <div class="card-icon-wrapper bg-blue-light" style="background: linear-gradient(135deg, #60a5fa, #2563eb);">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>
-          </div>
-          <div class="card-content flex-1">
-            <h3>Total Tabungan</h3>
-            <p class="amount text-savings mb-1" style="color: #3b82f6;">Rp {{ formatCurrency(totalSavings) }}</p>
-            <div v-if="hasMultipleMembers" class="breakdown-list">
-              <div v-for="(data, uid) in totalsByUser" :key="uid" class="breakdown-item" v-show="data.savings > 0 || uid === props.user?.id">
-                <span class="user-label">{{ getUserLabel(uid) }}</span>
-                <span class="user-amount">Rp {{ formatCurrency(data.savings) }}</span>
+        
+        <!-- Sub Cards -->
+        <div class="sub-cards-grid">
+          <!-- Saldo Terpisah (Per User) -->
+          <div v-if="hasMultipleMembers" class="summary-card glass-panel items-start">
+            <div class="card-icon-wrapper bg-blue-light" style="background: linear-gradient(135deg, #0ea5e9, #0284c7);">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+            </div>
+            <div class="card-content flex-1 w-full" style="min-width: 0;">
+              <h3>SALDO TERPISAH</h3>
+              <div class="breakdown-list w-full" style="margin-top: 0.75rem; border-top: none; padding-top: 0; width: 100%;">
+                <div v-for="(data, uid) in totalsByUser" :key="uid" class="breakdown-item">
+                  <span class="user-label">{{ getUserLabel(uid) }}</span>
+                  <span class="user-amount">Rp {{ formatCurrency(data.income - data.expense - data.savings) }}</span>
+                </div>
               </div>
             </div>
           </div>
-        </div>
-        <!-- Income -->
-        <div class="summary-card glass-panel income-card items-start">
-          <div class="card-icon-wrapper bg-green">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline><polyline points="17 6 23 6 23 12"></polyline></svg>
-          </div>
-          <div class="card-content flex-1">
-            <h3>Total Pemasukan</h3>
-            <p class="amount text-income mb-1">Rp {{ formatCurrency(totalIncome) }}</p>
-            <div v-if="hasMultipleMembers" class="breakdown-list">
-              <div v-for="(data, uid) in totalsByUser" :key="uid" class="breakdown-item" v-show="data.income > 0 || uid === props.user?.id">
-                <span class="user-label">{{ getUserLabel(uid) }}</span>
-                <span class="user-amount">Rp {{ formatCurrency(data.income) }}</span>
+          
+          <!-- Savings -->
+          <div class="summary-card glass-panel savings-card items-start">
+            <div class="card-icon-wrapper bg-blue-light" style="background: linear-gradient(135deg, #60a5fa, #2563eb);">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>
+            </div>
+            <div class="card-content flex-1">
+              <h3>Total Tabungan</h3>
+              <p class="amount text-savings mb-1" style="color: #3b82f6;">Rp {{ formatCurrency(totalSavings) }}</p>
+              <div v-if="hasMultipleMembers" class="breakdown-list">
+                <div v-for="(data, uid) in totalsByUser" :key="uid" class="breakdown-item" v-show="data.savings > 0 || uid === props.user?.id">
+                  <span class="user-label">{{ getUserLabel(uid) }}</span>
+                  <span class="user-amount">Rp {{ formatCurrency(data.savings) }}</span>
+                </div>
               </div>
             </div>
           </div>
-        </div>
-        <!-- Expense -->
-        <div class="summary-card glass-panel expense-card items-start">
-          <div class="card-icon-wrapper bg-purple">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 18 13.5 8.5 8.5 13.5 1 6"></polyline><polyline points="17 18 23 18 23 12"></polyline></svg>
+          <!-- Income -->
+          <div class="summary-card glass-panel income-card items-start">
+            <div class="card-icon-wrapper bg-green">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline><polyline points="17 6 23 6 23 12"></polyline></svg>
+            </div>
+            <div class="card-content flex-1">
+              <h3>Total Pemasukan</h3>
+              <p class="amount text-income mb-1">Rp {{ formatCurrency(totalIncome) }}</p>
+              <div v-if="hasMultipleMembers" class="breakdown-list">
+                <div v-for="(data, uid) in totalsByUser" :key="uid" class="breakdown-item" v-show="data.income > 0 || uid === props.user?.id">
+                  <span class="user-label">{{ getUserLabel(uid) }}</span>
+                  <span class="user-amount">Rp {{ formatCurrency(data.income) }}</span>
+                </div>
+              </div>
+            </div>
           </div>
-          <div class="card-content flex-1">
-            <h3>Total Pengeluaran</h3>
-            <p class="amount text-expense mb-1">Rp {{ formatCurrency(totalExpense) }}</p>
-            <div v-if="hasMultipleMembers" class="breakdown-list">
-              <div v-for="(data, uid) in totalsByUser" :key="uid" class="breakdown-item" v-show="data.expense > 0 || uid === props.user?.id">
-                <span class="user-label">{{ getUserLabel(uid) }}</span>
-                <span class="user-amount">Rp {{ formatCurrency(data.expense) }}</span>
+          <!-- Expense -->
+          <div class="summary-card glass-panel expense-card items-start">
+            <div class="card-icon-wrapper bg-purple">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 18 13.5 8.5 8.5 13.5 1 6"></polyline><polyline points="17 18 23 18 23 12"></polyline></svg>
+            </div>
+            <div class="card-content flex-1">
+              <h3>Total Pengeluaran</h3>
+              <p class="amount text-expense mb-1">Rp {{ formatCurrency(totalExpense) }}</p>
+              <div v-if="hasMultipleMembers" class="breakdown-list">
+                <div v-for="(data, uid) in totalsByUser" :key="uid" class="breakdown-item" v-show="data.expense > 0 || uid === props.user?.id">
+                  <span class="user-label">{{ getUserLabel(uid) }}</span>
+                  <span class="user-amount">Rp {{ formatCurrency(data.expense) }}</span>
+                </div>
               </div>
             </div>
           </div>
@@ -676,7 +696,7 @@ onMounted(() => {
 .uppercase { text-transform: uppercase; }
 
 /* Summary Cards Area */
-.summary-grid {
+.sub-cards-grid {
   display: grid;
   grid-template-columns: repeat(1, 1fr);
   gap: 1.5rem;
@@ -685,14 +705,8 @@ onMounted(() => {
 }
 
 @media (min-width: 768px) {
-  .summary-grid {
-    grid-template-columns: repeat(2, 1fr);
-  }
-}
-
-@media (min-width: 1280px) {
-  .summary-grid {
-    grid-template-columns: repeat(4, 1fr);
+  .sub-cards-grid {
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
   }
 }
 
@@ -709,6 +723,12 @@ onMounted(() => {
 .summary-card:hover {
   transform: translateY(-4px);
   box-shadow: 0 15px 30px -5px rgba(0, 0, 0, 0.1);
+}
+
+.card-content {
+  flex: 1;
+  min-width: 0;
+  width: 100%;
 }
 
 .card-icon-wrapper {
@@ -748,6 +768,26 @@ onMounted(() => {
   line-height: 1.2;
 }
 
+/* Hero Card Styles */
+.hero-card {
+  padding: 2rem;
+}
+.hero-card h3 {
+  font-size: 0.85rem;
+}
+.hero-card .hero-amount {
+  font-size: 2.25rem;
+}
+.hero-card .hero-icon {
+  width: 64px;
+  height: 64px;
+  border-radius: 18px;
+}
+.hero-card .hero-icon svg {
+  width: 32px;
+  height: 32px;
+}
+
 .breakdown-list {
   margin-top: 0.5rem;
   padding-top: 0.5rem;
@@ -755,6 +795,7 @@ onMounted(() => {
   display: flex;
   flex-direction: column;
   gap: 0.25rem;
+  width: 100%;
 }
 
 .breakdown-item {

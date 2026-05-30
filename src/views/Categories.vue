@@ -219,9 +219,8 @@ const fetchCategories = async () => {
 
   if (!error && data) {
     categories.value = data
-    // Auto-expand parents that have children by default
-    const parentsWithChildren = [...new Set(data.filter(c => c.parent_id).map(c => c.parent_id))]
-    expandedCategories.value = parentsWithChildren
+    // Default tertutup saat halaman baru dikunjungi
+    expandedCategories.value = []
   }
   fetching.value = false
 }
@@ -420,8 +419,9 @@ onMounted(() => {
 /* Slide Transition for Sub Categories */
 .slide-enter-active,
 .slide-leave-active {
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  max-height: 600px;
+  transition: max-height 0.4s ease-in-out, opacity 0.3s ease-in-out, transform 0.3s ease-out;
+  max-height: 400px;
+  transform-origin: top;
   opacity: 1;
   overflow: hidden;
 }
@@ -429,6 +429,7 @@ onMounted(() => {
 .slide-leave-to {
   max-height: 0;
   opacity: 0;
+  transform: translateY(-10px);
 }
 
 .text-primary { color: var(--primary) !important; }

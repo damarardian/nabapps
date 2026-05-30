@@ -7,7 +7,7 @@
       </div>
       <div class="nav-links flex gap-4">
         <router-link to="/" class="nav-link">Dashboard</router-link>
-        <router-link to="/budget" class="nav-link">Budget (YNAB)</router-link>
+        <router-link to="/budget" class="nav-link">Budget</router-link>
         <router-link to="/categories" class="nav-link">Kategori</router-link>
         <router-link to="/wallets" class="nav-link">Buku Kas</router-link>
       </div>

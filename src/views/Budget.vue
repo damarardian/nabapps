@@ -12,10 +12,6 @@
       
       <!-- Page Header with Month & User Selector -->
       <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
-        <div>
-          <h1 class="page-title m-0">Anggaran Bulanan</h1>
-          <p class="page-subtitle text-muted mt-1">Rencanakan pengeluaran Anda dengan bijak.</p>
-        </div>
         
         <div class="flex items-center gap-3">
           <!-- User Selector -->

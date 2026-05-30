@@ -22,7 +22,7 @@
                 <path d="M20 6L9 17l-5-5"></path>
               </svg>
             </div>
-            <p class="success-text mt-2 font-bold text-white">Sukses!</p>
+            <p class="success-text mt-2 font-bold text-primary">Sukses!</p>
           </div>
         </div>
 
@@ -102,8 +102,8 @@ onUnmounted(() => {
   left: 0;
   width: 100%;
   height: 100%;
-  background-color: rgba(0, 0, 0, 0.6);
-  backdrop-filter: blur(4px);
+  background-color: rgba(255, 255, 255, 0.6);
+  backdrop-filter: blur(6px);
   display: flex;
   justify-content: center;
   align-items: center;
@@ -114,9 +114,8 @@ onUnmounted(() => {
 .modal-content {
   width: 100%;
   max-width: 400px;
-  background-color: var(--bg-surface);
-  border: 1px solid var(--border);
-  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  padding: 1.5rem;
+  border-radius: var(--radius-lg);
 }
 
 .btn-close {
@@ -194,7 +193,7 @@ onUnmounted(() => {
   left: 0;
   width: 100%;
   height: 100%;
-  background-color: rgba(0, 0, 0, 0.5);
+  background-color: rgba(255, 255, 255, 0.85);
   backdrop-filter: blur(2px);
   display: flex;
   flex-direction: column;

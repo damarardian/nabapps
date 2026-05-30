@@ -74,11 +74,13 @@
       <div class="main-grid">
         <!-- Add Transaction Form -->
         <div class="form-section glass-panel">
-          <div class="flex items-center gap-3 mb-6">
-            <div class="icon-box bg-primary-light text-primary rounded-lg p-2">
-              <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"></path></svg>
-            </div>
+          <div class="flex justify-between items-center mb-4">
             <h2 class="m-0 text-xl font-bold">Catat Transaksi</h2>
+            <!-- AI Scanner Button -->
+            <button type="button" @click="triggerFileInput" class="btn btn-secondary btn-sm flex items-center gap-2">
+              <span>✨</span> Scan Struk
+            </button>
+            <input type="file" ref="fileInput" accept="image/*" capture="environment" class="hidden" style="display: none;" @change="handleFileUpload">
           </div>
           
           <form @submit.prevent="addTransaction" class="tx-form">
@@ -141,7 +143,7 @@
 
             <div class="form-group">
               <label class="form-label">Keterangan</label>
-              <input type="text" v-model="form.description" class="form-control" required placeholder="Misal: Beli makan siang">
+              <textarea v-model="form.description" class="form-control" rows="3" required placeholder="Misal: Beli makan siang / Rincian barang..."></textarea>
             </div>
             
             <div class="advanced-options-toggle mt-4 mb-2">
@@ -275,12 +277,21 @@
       </div>
     </div>
   </div>
+
+  <!-- AI Receipt Scanner Modal -->
+  <ReceiptScannerModal 
+    v-if="scanningFile" 
+    :file="scanningFile" 
+    @close="closeScanner" 
+    @success="handleScanSuccess" 
+  />
 </template>
 
 <script setup>
 import { ref, onMounted, computed, watch } from 'vue'
 import { supabase } from '../supabase'
 import TransactionItem from '../components/TransactionItem.vue'
+import ReceiptScannerModal from '../components/ReceiptScannerModal.vue'
 
 const props = defineProps(['user', 'activeWallet'])
 
@@ -289,6 +300,8 @@ const categories = ref([])
 const loading = ref(false)
 const fetching = ref(true)
 const hasAdminFee = ref(false)
+const fileInput = ref(null)
+const scanningFile = ref(null)
 
 const defaultForm = {
   type: 'expense',
@@ -551,6 +564,38 @@ const deleteTransaction = async (id) => {
   } else {
     transactions.value = transactions.value.filter(t => t.id !== id)
   }
+}
+
+// AI Scanner Logic
+const triggerFileInput = () => {
+  if (fileInput.value) {
+    fileInput.value.click()
+  }
+}
+
+const handleFileUpload = (event) => {
+  const file = event.target.files[0]
+  if (!file) return
+  
+  // Show Modal and pass the file
+  scanningFile.value = file
+  
+  // Reset file input so user can select the same file again if needed
+  if (fileInput.value) fileInput.value.value = ''
+}
+
+const closeScanner = () => {
+  scanningFile.value = null
+}
+
+const handleScanSuccess = (aiResult) => {
+  scanningFile.value = null
+  
+  // Auto-fill form
+  form.value.type = 'expense'
+  form.value.amount = aiResult.amount || ''
+  form.value.merchant = aiResult.merchant && aiResult.merchant !== 'Toko Tidak Diketahui' ? aiResult.merchant : ''
+  form.value.description = aiResult.items_detail || aiResult.items || 'Belanja Struk'
 }
 
 onMounted(() => {

@@ -26,12 +26,47 @@
             </select>
           </div>
 
-          <!-- Month Selector -->
-          <div class="month-selector-glass p-1 rounded-full flex items-center shadow-sm">
-            <div class="icon-calendar px-3 text-primary">
-              <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+          <!-- Custom Month Picker -->
+          <div class="relative month-picker-container" @click.stop>
+            <!-- Toggle Button -->
+            <button @click="isMonthPickerOpen = !isMonthPickerOpen" class="month-selector-glass p-1 rounded-full flex items-center shadow-sm cursor-pointer transition-all">
+              <div class="icon-calendar px-3 text-primary">
+                <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+              </div>
+              <span class="custom-month-text">{{ currentMonthFormatted }}</span>
+              <div class="px-3 text-muted">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+              </div>
+            </button>
+
+            <!-- Popup Dropdown -->
+            <div v-if="isMonthPickerOpen" class="month-popup glass-panel absolute top-full left-0 mt-2 p-4 shadow-xl z-50 animate-slide-up">
+              <!-- Year Selector Header -->
+              <div class="flex justify-between items-center mb-4">
+                <button @click="pickerYear--" class="year-nav-btn hover:text-primary">
+                  <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
+                </button>
+                <span class="font-bold text-lg">{{ pickerYear }}</span>
+                <button @click="pickerYear++" class="year-nav-btn hover:text-primary">
+                  <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                </button>
+              </div>
+              <!-- Months Grid -->
+              <div class="grid grid-cols-3 gap-2">
+                <button 
+                  v-for="(monthName, index) in monthNames" 
+                  :key="index"
+                  @click="selectMonth(index + 1)"
+                  class="month-btn py-2 px-3 rounded-lg text-sm text-center transition-colors"
+                  :class="{
+                    'bg-primary text-white font-bold': isSelectedMonth(index + 1),
+                    'hover:bg-surface-hover text-muted': !isSelectedMonth(index + 1)
+                  }"
+                >
+                  {{ monthName }}
+                </button>
+              </div>
             </div>
-            <input type="month" v-model="selectedMonth" class="month-input">
           </div>
         </div>
       </div>
@@ -164,7 +199,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, watch } from 'vue'
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { supabase } from '../supabase'
 
 const props = defineProps(['user', 'activeWallet'])
@@ -179,11 +214,50 @@ const selectedUserId = ref(null)
 // 'YYYY-MM' format for month input
 const selectedMonth = ref(new Date().toISOString().substring(0, 7))
 
+// Custom Month Picker Logic
+const isMonthPickerOpen = ref(false)
+const pickerYear = ref(parseInt(selectedMonth.value.split('-')[0]))
+const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des']
+
+const selectMonth = (monthNumber) => {
+  const formattedMonth = String(monthNumber).padStart(2, '0')
+  selectedMonth.value = `${pickerYear.value}-${formattedMonth}`
+  isMonthPickerOpen.value = false
+}
+
+const isSelectedMonth = (monthNumber) => {
+  const target = `${pickerYear.value}-${String(monthNumber).padStart(2, '0')}`
+  return selectedMonth.value === target
+}
+
+// Close popup on outside click
+const closePicker = (e) => {
+  isMonthPickerOpen.value = false
+}
+onMounted(() => window.addEventListener('click', closePicker))
+onUnmounted(() => window.removeEventListener('click', closePicker))
+
+// Payday logic based on selected user
+const getPaydayForSelectedUser = () => {
+  const member = walletMembers.value.find(m => m.user_id === selectedUserId.value)
+  return member?.payday_date || 1
+}
+
 const currentMonthFormatted = computed(() => {
   if (!selectedMonth.value) return ''
   const [year, month] = selectedMonth.value.split('-')
   const date = new Date(year, month - 1)
-  return new Intl.DateTimeFormat('id-ID', { month: 'long', year: 'numeric' }).format(date)
+  const baseLabel = new Intl.DateTimeFormat('id-ID', { month: 'long', year: 'numeric' }).format(date)
+  
+  const payday = getPaydayForSelectedUser()
+  if (payday === 1) return baseLabel
+  
+  const mIndex = parseInt(month) - 1
+  const prevDate = new Date(year, mIndex - 1)
+  const prevMonthName = new Intl.DateTimeFormat('id-ID', { month: 'short' }).format(prevDate)
+  const currMonthName = new Intl.DateTimeFormat('id-ID', { month: 'short' }).format(date)
+  
+  return `${baseLabel} (${payday} ${prevMonthName} - ${payday - 1} ${currMonthName})`
 })
 
 // Fetch all necessary data
@@ -202,7 +276,7 @@ const fetchData = async () => {
     supabase.from('categories').select('*').eq('wallet_id', props.activeWallet.id),
     supabase.from('transactions').select('*').eq('wallet_id', props.activeWallet.id),
     supabase.from('budgets').select('*').eq('wallet_id', props.activeWallet.id),
-    supabase.from('wallet_members').select('user_id, role').eq('wallet_id', props.activeWallet.id)
+    supabase.from('wallet_members').select('user_id, role, payday_date').eq('wallet_id', props.activeWallet.id)
   ])
 
   if (catRes.data) categories.value = catRes.data
@@ -249,17 +323,50 @@ const getUserLabel = (uid) => {
   }
 }
 
-// YNAB Math (Scoped by User)
+// YNAB Math (Scoped by User & Time-Aware up to Selected Month)
+const getActiveMonths = () => {
+  if (!selectedMonth.value) return []
+  
+  let earliest = selectedMonth.value
+  transactions.value.forEach(t => {
+    const ym = t.date.substring(0, 7)
+    if (ym < earliest) earliest = ym
+  })
+  budgets.value.forEach(b => {
+    const ym = b.month.substring(0, 7)
+    if (ym < earliest) earliest = ym
+  })
+  
+  const result = []
+  let current = new Date(`${earliest}-01`)
+  const end = new Date(`${selectedMonth.value}-01`)
+  
+  while (current <= end) {
+    const y = current.getFullYear()
+    const m = String(current.getMonth() + 1).padStart(2, '0')
+    result.push(`${y}-${m}`)
+    current.setMonth(current.getMonth() + 1)
+  }
+  
+  return result
+}
+
 const totalIncomeAllTime = computed(() => {
+  if (!selectedMonth.value) return 0
+  const endOfSelected = getMonthStartEnd(selectedMonth.value).end.split('T')[0]
   return transactions.value
-    .filter(t => t.type === 'income' && t.user_id === selectedUserId.value)
+    .filter(t => t.type === 'income' && t.user_id === selectedUserId.value && t.date <= endOfSelected)
     .reduce((sum, t) => sum + Number(t.amount), 0)
 })
 
 const totalAssignedAllTime = computed(() => {
-  return budgets.value
-    .filter(b => b.user_id === selectedUserId.value)
-    .reduce((sum, b) => sum + Number(b.assigned_amount), 0)
+  let sum = 0
+  categories.value.forEach(c => {
+    if (c.type === 'expense' || c.type === 'savings') {
+       sum += getAllTimeAssigned(c.id)
+    }
+  })
+  return sum
 })
 
 const readyToAssign = computed(() => {
@@ -279,28 +386,55 @@ const unformatCurrency = (val) => {
 
 // Budget Cell Logics
 const getMonthStartEnd = (ym) => {
+  if (!ym) return { start: new Date().toISOString(), end: new Date().toISOString() }
   const [y, m] = ym.split('-')
-  const start = new Date(y, m - 1, 1).toISOString()
-  const end = new Date(y, m, 0, 23, 59, 59).toISOString() // last day of month
-  return { start, end }
+  const year = parseInt(y)
+  const month = parseInt(m)
+  const payday = getPaydayForSelectedUser()
+  
+  if (payday === 1) {
+    const start = new Date(Date.UTC(year, month - 1, 1)).toISOString()
+    const end = new Date(Date.UTC(year, month, 0, 23, 59, 59)).toISOString()
+    return { start, end }
+  } else {
+    // If payday > 1, cycle starts in previous month at payday, ends this month at payday - 1
+    const start = new Date(Date.UTC(year, month - 2, payday)).toISOString()
+    const end = new Date(Date.UTC(year, month - 1, payday - 1, 23, 59, 59)).toISOString()
+    return { start, end }
+  }
+}
+
+const getAssignedForMonth = (categoryId, monthStr) => {
+  // Exact match for the month
+  const exact = budgets.value.find(b => b.category_id === categoryId && b.user_id === selectedUserId.value && b.month.startsWith(monthStr))
+  if (exact) return Number(exact.assigned_amount)
+  
+  // Past match (carry over the most recent budget)
+  const pastBudgets = budgets.value
+    .filter(b => b.category_id === categoryId && b.user_id === selectedUserId.value && b.month < `${monthStr}-01`)
+    .sort((a, b) => b.month.localeCompare(a.month)) // descending
+    
+  if (pastBudgets.length > 0) return Number(pastBudgets[0].assigned_amount)
+  
+  return 0
 }
 
 const getBudgetForCategory = (categoryId) => {
-  // Budget for *selected* month and user
-  const targetDateStr = `${selectedMonth.value}-01`
-  const b = budgets.value.find(b => b.category_id === categoryId && b.user_id === selectedUserId.value && b.month.startsWith(selectedMonth.value))
-  return b ? Number(b.assigned_amount) : 0
+  return getAssignedForMonth(categoryId, selectedMonth.value)
 }
 
 const getAllTimeAssigned = (categoryId) => {
-  return budgets.value
-    .filter(b => b.category_id === categoryId && b.user_id === selectedUserId.value)
-    .reduce((sum, b) => sum + Number(b.assigned_amount), 0)
+  const months = getActiveMonths()
+  return months.reduce((sum, monthStr) => {
+    return sum + getAssignedForMonth(categoryId, monthStr)
+  }, 0)
 }
 
 const getAllTimeActivity = (categoryId) => {
+  if (!selectedMonth.value) return 0
+  const endOfSelected = getMonthStartEnd(selectedMonth.value).end.split('T')[0]
   return transactions.value
-    .filter(t => t.category_id === categoryId && t.user_id === selectedUserId.value && (t.type === 'expense' || t.type === 'savings'))
+    .filter(t => t.category_id === categoryId && t.user_id === selectedUserId.value && t.date <= endOfSelected && (t.type === 'expense' || t.type === 'savings'))
     .reduce((sum, t) => sum + Number(t.amount) + Number(t.admin_fee || 0), 0)
 }
 
@@ -477,6 +611,61 @@ onMounted(() => {
   border: 1px solid var(--border);
 }
 
+.text-main { color: var(--text-h); }
+
+/* Custom Month Picker Styles */
+.custom-month-text {
+  background: transparent;
+  color: var(--text-h);
+  font-weight: 600;
+  padding: 0.5rem 0.5rem 0.5rem 0.25rem;
+  font-size: 0.95rem;
+}
+
+.month-popup {
+  width: 280px;
+  border-radius: 1rem;
+  border: 1px solid var(--border);
+}
+.year-nav-btn {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 0.25rem;
+  color: var(--text-muted);
+  transition: color 0.2s;
+}
+.month-btn {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+}
+.month-btn.bg-primary {
+  background-color: var(--primary) !important;
+  color: white !important;
+}
+.hover\:bg-surface-hover:hover {
+  background-color: var(--bg-surface-hover);
+}
+.z-50 {
+  z-index: 50;
+}
+.absolute {
+  position: absolute;
+}
+.top-full {
+  top: 100%;
+}
+.left-0 {
+  left: 0;
+}
+.grid {
+  display: grid;
+}
+.grid-cols-3 {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
 .user-input {
   background: transparent;
   border: none;
@@ -492,21 +681,6 @@ onMounted(() => {
 .user-input option {
   background: var(--bg-body);
   color: var(--text-h);
-}
-
-.month-input {
-  background: transparent;
-  border: none;
-  color: var(--text-h);
-  font-weight: 600;
-  padding: 0.5rem 1rem;
-  outline: none;
-  font-size: 1rem;
-  cursor: pointer;
-}
-.month-input::-webkit-calendar-picker-indicator {
-  filter: invert(0.5);
-  cursor: pointer;
 }
 
 /* RTA Hero Card */

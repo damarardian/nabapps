@@ -19,7 +19,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, watch } from 'vue'
+import { ref, onMounted, onUnmounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { supabase } from './supabase'
 import Navbar from './components/Navbar.vue'
@@ -42,6 +42,7 @@ const fetchWallets = async () => {
       .select(`
         wallet_id,
         role,
+        payday_date,
         wallets (
           id,
           name,
@@ -111,6 +112,54 @@ onMounted(() => {
       localStorage.removeItem('activeWalletId')
     }
   })
+})
+
+onUnmounted(() => {
+  removeActivityListeners()
+})
+
+// === Session Timeout Logic ===
+const SESSION_TIMEOUT_MS = 15 * 60 * 1000 // 15 minutes
+let inactivityTimer = null
+
+const resetTimer = () => {
+  if (!user.value) return
+  if (inactivityTimer) clearTimeout(inactivityTimer)
+  
+  inactivityTimer = setTimeout(() => {
+    handleTimeoutLogout()
+  }, SESSION_TIMEOUT_MS)
+}
+
+const handleTimeoutLogout = async () => {
+  if (inactivityTimer) clearTimeout(inactivityTimer)
+  alert('Sesi Anda telah berakhir karena tidak ada aktivitas selama 15 menit. Silakan login kembali untuk keamanan akun Anda.')
+  await handleLogout()
+}
+
+const activityEvents = ['mousemove', 'mousedown', 'keypress', 'touchstart', 'scroll']
+
+const setupActivityListeners = () => {
+  activityEvents.forEach(event => {
+    window.addEventListener(event, resetTimer, { passive: true })
+  })
+}
+
+const removeActivityListeners = () => {
+  activityEvents.forEach(event => {
+    window.removeEventListener(event, resetTimer)
+  })
+  if (inactivityTimer) clearTimeout(inactivityTimer)
+}
+
+// Start tracking only when user is logged in
+watch(user, (newUser) => {
+  if (newUser) {
+    setupActivityListeners()
+    resetTimer()
+  } else {
+    removeActivityListeners()
+  }
 })
 
 const handleLogout = async () => {

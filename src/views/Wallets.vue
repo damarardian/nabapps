@@ -68,26 +68,39 @@
           <div class="wallet-item-header">
             <div class="wallet-info">
               <!-- Edit Mode -->
-              <form v-if="editingWalletId === w.wallet_id" @submit.prevent="saveWalletName" class="edit-name-form mb-2">
-                <input type="text" v-model="editingWalletName" class="form-control form-control-sm" required autofocus>
-                <button type="submit" class="btn btn-primary btn-sm" title="Simpan">
-                  <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                </button>
-                <button type="button" class="btn btn-secondary btn-sm" title="Batal" @click="cancelEdit">
-                  <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
-                </button>
+              <form v-if="editingWalletId === w.wallet_id" @submit.prevent="saveWalletEdit" class="edit-name-form mb-2">
+                <div class="flex flex-col gap-2 w-full">
+                  <div v-if="w.role === 'owner'" class="flex gap-2 w-full">
+                    <input type="text" v-model="editingWalletName" class="form-control form-control-sm flex-1" required placeholder="Nama Buku Kas">
+                  </div>
+                  <div class="flex items-center gap-2">
+                    <span class="text-xs text-muted">Tgl Gajian Anda:</span>
+                    <input type="number" min="1" max="31" v-model="editingWalletPayday" class="form-control form-control-sm w-16 text-center" required>
+                    <button type="submit" class="btn btn-primary btn-sm ml-auto" title="Simpan">
+                      <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                    </button>
+                    <button type="button" class="btn btn-secondary btn-sm" title="Batal" @click="cancelEdit">
+                      <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                    </button>
+                  </div>
+                </div>
               </form>
               <!-- View Mode -->
               <div v-else class="flex items-center gap-2 mb-2">
                 <h4 class="wallet-name" :title="w.wallets.name">{{ w.wallets.name }}</h4>
-                <button v-if="w.role === 'owner'" class="menu-btn edit-btn" title="Edit Nama" @click="startEdit(w)">
-                  <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+                <button class="menu-btn edit-btn" title="Pengaturan" @click="startEdit(w)">
+                  <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"></path><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>
                 </button>
               </div>
 
-              <span class="wallet-badge" :class="w.role === 'owner' ? 'badge-owner' : 'badge-member'">
-                {{ w.role === 'owner' ? 'Pemilik' : 'Anggota' }}
-              </span>
+              <div class="flex items-center gap-2 mt-1">
+                <span class="wallet-badge" :class="w.role === 'owner' ? 'badge-owner' : 'badge-member'">
+                  {{ w.role === 'owner' ? 'Pemilik' : 'Anggota' }}
+                </span>
+                <span class="wallet-badge badge-member bg-surface text-muted">
+                  Siklus: Tgl {{ w.payday_date || 1 }}
+                </span>
+              </div>
             </div>
             
             <button class="menu-btn danger-btn" title="Keluar / Hapus" @click="leaveWallet(w.wallet_id, w.role)">
@@ -135,6 +148,7 @@ const loadingJoin = ref(false)
 // Edit state
 const editingWalletId = ref(null)
 const editingWalletName = ref('')
+const editingWalletPayday = ref(1)
 
 const fetchMyWallets = async () => {
   if (!props.user) return
@@ -144,6 +158,7 @@ const fetchMyWallets = async () => {
     .select(`
       wallet_id,
       role,
+      payday_date,
       wallets (
         id,
         name,
@@ -219,32 +234,53 @@ const switchWallet = (id) => {
 const startEdit = (wallet) => {
   editingWalletId.value = wallet.wallet_id
   editingWalletName.value = wallet.wallets.name
+  editingWalletPayday.value = wallet.payday_date || 1
 }
 
 const cancelEdit = () => {
   editingWalletId.value = null
   editingWalletName.value = ''
+  editingWalletPayday.value = 1
 }
 
-const saveWalletName = async () => {
-  if (!editingWalletName.value.trim() || !editingWalletId.value) return
+const saveWalletEdit = async () => {
+  if (!editingWalletId.value) return
+  let payday = parseInt(editingWalletPayday.value)
+  if (isNaN(payday) || payday < 1 || payday > 31) payday = 1
   
-  const { error } = await supabase
-    .from('wallets')
-    .update({ name: editingWalletName.value.trim() })
-    .eq('id', editingWalletId.value)
+  const wallet = myWallets.value.find(w => w.wallet_id === editingWalletId.value)
+  
+  let success = true
+  
+  // Save Wallet Name if Owner
+  if (wallet.role === 'owner' && editingWalletName.value.trim()) {
+    const { error: wError } = await supabase
+      .from('wallets')
+      .update({ name: editingWalletName.value.trim() })
+      .eq('id', editingWalletId.value)
     
-  if (error) {
-    alert('Gagal mengubah nama: ' + error.message)
-  } else {
-    // Optimistic update locally
-    const wallet = myWallets.value.find(w => w.wallet_id === editingWalletId.value)
-    if (wallet) wallet.wallets.name = editingWalletName.value.trim()
-    
-    // Also notify app to refresh the nav dropdown if it's the active wallet
-    emit('refresh-wallets')
-    
-    cancelEdit()
+    if (wError) {
+      alert('Gagal mengubah nama buku kas: ' + wError.message)
+      success = false
+    } else {
+      wallet.wallets.name = editingWalletName.value.trim()
+    }
+  }
+  
+  // Save Payday Date for the current user
+  if (success) {
+    const { error: mError } = await supabase
+      .from('wallet_members')
+      .update({ payday_date: payday })
+      .match({ wallet_id: editingWalletId.value, user_id: props.user.id })
+      
+    if (mError) {
+      alert('Gagal menyimpan siklus gajian: ' + mError.message)
+    } else {
+      wallet.payday_date = payday
+      emit('refresh-wallets')
+      cancelEdit()
+    }
   }
 }
 
